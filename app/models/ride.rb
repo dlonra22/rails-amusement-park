@@ -1,35 +1,39 @@
 class Ride < ActiveRecord::Base
     belongs_to :user 
     belongs_to :attraction
-    validates :user_id, presence: true 
-    validates :attraction_id, presence: true
+ 
 
     def take_ride
-        @user = User.find_by(id: self.user_id)
-        @attraction = Attraction.find_by(id: self.attraction_id)
-        tallenough = false
-        enoughtickets = false
-        comment = ''
-
-        if @user && @attraction
-            enoughtickets = true if @user.tickets >= @attraction.tickets
-            tallenough = true if @user.height >= @attraction.min_height
-        end
-
         if tallenough && enoughtickets
-            @user.tickets = @user.tickets - @attraction.tickets
-            @user.happiness += @attraction.happiness_rating
-            @user.nausea += @attraction.nausea_rating
-            @user.save
-        elsif !tallenough && !enoughtickets
-            comment = "Sorry. You do not have enough tickets to ride the #{@attraction.name}. You are not tall enough to ride the #{@attraction.name}."
-        elsif !enoughtickets
-            comment = "Sorry. You do not have enough tickets to ride the #{@attraction.name}."
-        elsif !tallenough
-            comment = "Sorry. You are not tall enough to ride the #{@attraction.name}."
+           newtickets = self.user.tickets - self.attraction.tickets
+           newhappiness = self.user.happiness + self.attraction.happiness_rating
+           newnausea = self.user.nausea + self.attraction.nausea_rating
+           self.user.update(tickets: newtickets, happiness: newhappiness, nausea: newnausea)
         end
-        
         comment
+    end
+
+    def tallenough
+        self.user.height >= self.attraction.min_height ? true : false
+    end
+
+    def enoughtickets
+        self.user.tickets >= self.attraction.tickets ? true : false
+    end
+    
+    def comment
+        cm = ''
+        if !tallenough & !enoughtickets
+            cm = "Sorry. You do not have enough tickets to ride the #{self.attraction.name}. You are not tall enough to ride the #{self.attraction.name}."
+        elsif !tallenough
+            cm = "Sorry. You are not tall enough to ride the #{self.attraction.name}."
+        elsif !enoughtickets
+            cm = "Sorry. You do not have enough tickets to ride the #{self.attraction.name}."
+        else
+            cm = "Thanks for riding the #{self.attraction.name}!"
+        end
+
+        cm
     end
 
 
